@@ -132,6 +132,10 @@ class Button : public sf::Drawable {
                 f();
             }
         }
+
+        void setText(std::string str) {
+            text.setString(str);
+        }
 };
 
 bool bClose;
@@ -142,7 +146,48 @@ void fClose() {
     bClose=true;
 }
 
+
+unsigned char nServers = 10;
+
+std::string serverList[] = {
+    "BR  ",
+    "EUNE",
+    "EUW ",
+    "JP  ",
+    "LAN ",
+    "LAS   ",
+    "NA  ",
+    "OC  ",
+    "RU  ",
+    "TR  "
+};
+
+std::string serverCodes[] = {
+    "BR",
+    "EUNE",
+    "EUW",
+    "JP",
+    "LA1",
+    "LA2",
+    "NA",
+    "OC1",
+    "RU",
+    "TR"
+};
+
+unsigned char selectedServer = 5;
+
 using namespace boost::filesystem;
+
+void fNext() {
+    selectedServer++;
+    if(selectedServer == nServers) selectedServer=0;
+}
+
+void fPrevious() {
+    if(selectedServer == 0) selectedServer=10;
+    selectedServer--;
+}
 
 void fDoIt() {
     std::string line="";
@@ -173,7 +218,10 @@ void fDoIt() {
     }
     printf("%ls\n",greatest.c_str());
     if(!myfile.good()) { printf("Not Good"); error=true; return; }
-    while(!myfile.eof() && line!="  LA2:") { std::getline(myfile,line); out.append(line); out.push_back((char)10); }
+    std::string serverLine = "  ";
+    serverLine.append(serverCodes[selectedServer]);
+    serverLine.append(":");
+    while(!myfile.eof() && line!=serverLine) { std::getline(myfile,line); out.append(line); out.push_back((char)10); }
     while(!myfile.eof() && line!="    available_locales:") { std::getline(myfile,line); out.append(line); out.push_back((char)10); }
     out.append(R"(    - en_US
     - es_MX
@@ -181,6 +229,7 @@ void fDoIt() {
     - pt_BR
     - de_DE
     - ja_JP
+    - ko_KR
     - fr_FR
     - it_IT
     - cs_CZ
@@ -322,7 +371,7 @@ int main()
     sf::Text footer(L"By Desaroll. Sin garantía.",font,10);
     sf::Text footer2(L"Si se rompe, te quedas con ambas partes.",font,10);
     sf::Text footer3(L"Esto no fue aprobado ni desaprobado por Riot.",font,10);
-    sf::Text version(L"v1.0",font,10);
+    sf::Text version(L"v1.2",font,10);
     footer.setPosition(10,355);
     footer2.setPosition(10,370);
     footer3.setPosition(10,385);
@@ -340,13 +389,22 @@ int main()
     sf::Text howTo(L"          Asegurate que el archivo \"Lang Enabler.exe\" esté dentro de la carpeta \n                 del juego (Normalmente, \"C:\\Riot Games\\League Of Legends\\\")\n                                                                          y abrelo desde allí.",font,10);
     howTo.setPosition(5,200);
 
-    Button doIt("Habilitar todos los Idiomas para LAS",40,250,font,fDoIt);
-    Button revert("Revertir",80,300,font,fRevert);
-    Button close("Cerrar",240,300,font,fClose);
-	// Start the game loop
+    Button doIt("Habilitar todos los idiomas para "+serverList[selectedServer],32,250,font,fDoIt);
+    Button revert("Revertir",32,290,font,fRevert);
+    Button close("Cerrar",300,290,font,fClose);
+
+    Button next(">>",205,290,font,fNext);
+    Button previous("<<",159,290,font,fPrevious);
+
+    unsigned char currentServer = selectedServer;
+
+	// Start the loop
     while (app.isOpen())
     {
-
+        if(currentServer != selectedServer) {
+            doIt.setText("Habilitar todos los idiomas para "+serverList[selectedServer]);
+            currentServer = selectedServer;
+        }
         // Clear screen
         app.clear(sf::Color(1,10,18));
 
@@ -356,6 +414,8 @@ int main()
         app.draw(doIt);
         app.draw(close);
         app.draw(revert);
+        app.draw(next);
+        app.draw(previous);
         app.draw(howTo);
         if(error) app.draw(gError);
         if(good) app.draw(gGood);
@@ -375,14 +435,20 @@ int main()
                 doIt.checkOver(event.mouseMove.x,event.mouseMove.y);
                 close.checkOver(event.mouseMove.x,event.mouseMove.y);
                 revert.checkOver(event.mouseMove.x,event.mouseMove.y);
+                next.checkOver(event.mouseMove.x,event.mouseMove.y);
+                previous.checkOver(event.mouseMove.x,event.mouseMove.y);
             } else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Button::Left) {
                 doIt.checkPress(event.mouseButton.x,event.mouseButton.y);
                 close.checkPress(event.mouseButton.x,event.mouseButton.y);
                 revert.checkPress(event.mouseButton.x,event.mouseButton.y);
+                next.checkPress(event.mouseButton.x,event.mouseButton.y);
+                previous.checkPress(event.mouseButton.x,event.mouseButton.y);
             } else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Button::Left) {
                 doIt.checkRelease(event.mouseButton.x,event.mouseButton.y);
                 close.checkRelease(event.mouseButton.x,event.mouseButton.y);
                 revert.checkRelease(event.mouseButton.x,event.mouseButton.y);
+                next.checkRelease(event.mouseButton.x,event.mouseButton.y);
+                previous.checkRelease(event.mouseButton.x,event.mouseButton.y);
             }
         }
         if(bClose == true) app.close();
